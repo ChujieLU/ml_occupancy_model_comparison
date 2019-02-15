@@ -1,0 +1,1 @@
+{"max_depth": 3, "min_samples_leaf": 1, "accuracy": 1.0, "precision": 1.0, "recall": 1.0, "train_accuracy": [["sin_H_t", 0.13778237459718207], ["cos_H_t", 0.37304824987979335], ["W_t", 5.191256901173829e-07], ["M_t-1", 0.4891688563973344]]}
