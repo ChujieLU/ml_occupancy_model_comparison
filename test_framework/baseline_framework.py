@@ -8,11 +8,6 @@ from . import constants as constant
 from . import utils as util
 
 
-#METHOD_NAME = "BASE2_"
-#SAVE_PATH = os.path.join(os.path.expanduser("~"),"Documents/PhD_Work/home_occupancy_state/final_versions2",METHOD_NAME)
-#NSTEPS_AHEAD = 6
-#SAVE = False
-
 def add_prediction_columns(df_, pred_len = 6):
     """
     Add an empty column for each timestep.
@@ -57,13 +52,14 @@ class base_tests(lr_f.lr_test):
                     logging.info("thermostat {} - {} Base2 Done".format(self.thermostat.tstat_id, test_case))
                     self.result_past_state()
                     logging.info("thermostat {} - {} Base3 Done".format(self.thermostat.tstat_id, test_case))
-
+                    self.result_most_common_time_and_day()
+                    logging.info("thermostat {} - {} Base4 Done".format(self.thermostat.tstat_id, test_case))
                     self.save_all_base_results(test_case,self.N_STEPS_AHEAD, self.SAVE_PATH, self.METHOD)
 
 
     def result_most_common_state(self):
         """
-        Apply the most common state for all the inference times
+        Apply the most common state for all the Infernce times
         """
         self.df_result_frequent_state = self.test.filter(items=['M_t+0']).copy()
         self.df_result_frequent_state = self.df_result_frequent_state.rename(columns={'M_t+0':'M_t'})
@@ -85,7 +81,7 @@ class base_tests(lr_f.lr_test):
 
     def result_most_common_time(self):
         """
-        Infere values at each prediction based on the most common state in that time bin
+        Infer values at each prediction based on the most common state in that time bin
         """
         self.df_result_frequent_time = self.test.filter(items=['M_t+0','H_t']).copy()
         self.df_result_frequent_time = self.df_result_frequent_time.rename(columns={'M_t+0':'M_t'})
@@ -98,6 +94,19 @@ class base_tests(lr_f.lr_test):
         for n_pred in range(1,self.N_STEPS_AHEAD):
             self.df_result_frequent_time['M_t+{}'.format(n_pred)] = self.df_result_frequent_time['M_t+0'].shift(-n_pred)
 
+    def result_most_common_time_and_day(self):
+        """
+        Infer values at each prediction based on the most common state based on time bin and day type
+        """
+        self.df_result_frequent_day_and_time = self.test.filter(items=['M_t+0','H_t','W_t']).copy()
+        self.df_result_frequent_day_and_time = self.df_result_frequent_day_and_time.rename(columns={'M_t+0':'M_t'})
+        self.df_result_frequent_day_and_time = self.df_result_frequent_day_and_time.reset_index(drop=False)
+        max_common_array = self.most_common_by_time_stamp_and_day()
+        self.df_result_frequent_day_and_time = self.df_result_frequent_day_and_time.merge(max_common_array, on=['H_t','W_t'])
+        self.df_result_frequent_day_and_time = self.df_result_frequent_day_and_time.sort_values(['','H_t'])
+        self.df_result_frequent_day_and_time = self.df_result_frequent_day_and_time.reset_index(drop=True)
+        for n_pred in range(1,NSTEPS_AHEAD):
+            self.df_result_frequent_day_and_time['M_t+{}'.format(n_pred)] = self.df_result_frequent_day_and_time['M_t+0'].shift(-n_pred)
 
     def most_common_by_time_stamp(self):
         """
@@ -132,3 +141,5 @@ class base_tests(lr_f.lr_test):
                                                 self.thermostat.tstat_id,trial)),compression='gzip')
         self.df_result_past_state.to_csv(os.path.join(save_path,"{}_n{}_{}_{}_base3.csv.gz".format(method,n,
                                                 self.thermostat.tstat_id,trial)),compression='gzip')
+        self.df_result_frequent_day_and_time.to_csv(os.path.join(save_path,"{}_n{}_{}_{}_base4.csv.gz".format(method,n,
+                                        self.thermostat.tstat_id,trial)),compression='gzip')
